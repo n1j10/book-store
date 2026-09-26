@@ -1,3 +1,5 @@
+# book-store
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
@@ -35,15 +37,6 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Seed books and Neon Storage
-
-Book metadata and cover IDs were sourced through the [Open Library Search API](https://openlibrary.org/dev/docs/api/search); cover images are served by the Open Library Covers API.
-
-1. Configure the public-read `book-store-images` bucket from `neon.ts` on the Neon project/branch with `neon deploy`, then run `neon env pull` to populate the AWS environment variables.
-2. Set `DATABASE_URL` to the Neon pooled connection string and `DIRECT_URL` to the direct connection string.
-3. Run `npm run seed` to insert or update the sample categories and books.
-
-The seed is idempotent and uses stable IDs. New admin uploads are stored in Neon Object Storage; seeded cover images remain hosted by Open Library.
 ## Seed books and Neon Storage
 
 Book metadata and cover IDs were sourced through the [Open Library Search API](https://openlibrary.org/dev/docs/api/search); cover images are served by the Open Library Covers API.
