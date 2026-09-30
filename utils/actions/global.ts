@@ -1,10 +1,14 @@
-﻿export const renderError = (error: unknown): { message: string } => {
+// Turn any error into a simple { message } object that the forms can show.
+export const renderError = (error: unknown): { message: string } => {
   return {
     message: error instanceof Error ? error.message : "Unknown Error",
   };
 };
 
-// ── Barrel re-exports (backward compatibility) ──────────────────────────────
+// ── Re-exports ──────────────────────────────────────────────────────────────
+// So old imports like `import { fetchAllProducts } from "@/utils/actions/global"`
+// keep working.
+
 export { getAuthUser, getAdminUser } from "./user";
 
 export {
