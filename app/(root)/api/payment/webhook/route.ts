@@ -53,26 +53,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    let verifiedStatus = rawStatus;
-    let details = body.details;
-
-    // Direct server-to-server confirmation with QiCard API
-    if (paymentId) {
-      try {
-        const inquiry = await getQiCardPaymentStatus(paymentId);
-        verifiedStatus = inquiry.status;
-        details = inquiry.details || details;
-      } catch (inquiryErr) {
-        console.warn('QiCard status inquiry during webhook failed, using body status:', inquiryErr);
-      }
+    // The webhook body is untrusted input. The payment is only settled with the
+    // status and amount returned by a direct server-to-server inquiry to QiCard.
+    const gatewayPaymentId = payment?.paymentId || paymentId;
+    if (!payment || !gatewayPaymentId) {
+      return NextResponse.json({ received: true });
     }
+
+    const inquiry = await getQiCardPaymentStatus(gatewayPaymentId);
+    const verifiedStatus = inquiry.status;
 
     if (verifiedStatus) {
       await settleQiCardPayment({
-        paymentId: paymentId || payment?.paymentId || undefined,
-        requestId: requestId || payment?.requestId || undefined,
+        paymentId: gatewayPaymentId,
+        requestId: payment.requestId,
         status: verifiedStatus,
-        details,
+        amount: inquiry.amount,
+        details: inquiry.details,
       });
     }
 

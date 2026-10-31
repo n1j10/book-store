@@ -110,3 +110,6 @@ export const categorySchema = zod.object({
         message: "Description must be at most 300 characters long"
     }).optional(),
 })
+
+//Cart quantity: positive integer with an upper bound (blocks negative-price attacks)
+export const cartAmountSchema = zod.coerce.number().int().min(1, 'Amount must be at least 1').max(100, 'Amount must be at most 100')

@@ -7,7 +7,8 @@ export default clerkMiddleware(async (auth, req) => {
   // Protect admin routes
   if (pathname.startsWith('/admin')) {
     const { userId } = await auth();
-    const isAdmin = userId === process.env.ADMIN_USER_ID;
+    const adminId = process.env.ADMIN_USER_ID;
+    const isAdmin = Boolean(userId && adminId && userId === adminId);
     if (!isAdmin) {
       return NextResponse.redirect(new URL('/', req.url));
     }

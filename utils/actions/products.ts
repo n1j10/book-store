@@ -5,7 +5,7 @@ import { imageSchema, productSchema, validateFuctionSchema } from "../schema";
 import { deleteImage, uploadImage } from "../neon-storage";
 import { revalidatePath } from "next/cache";
 import { links } from "../links";
-import { getAuthUser, getAdminUser } from "./user";
+import { getAdminUser } from "./user";
 import { renderError } from "./global";
 
 // ================= Helpers =================
@@ -75,7 +75,7 @@ export async function createProductAction(
   prevState: any,
   formData: FormData,
 ): Promise<{ message: string }> {
-  const user = await getAuthUser();
+  const user = await getAdminUser();
 
   try {
     const formValues = Object.fromEntries(formData);
@@ -140,17 +140,20 @@ export const updateProductAction = async (prevState: any, formData: FormData) =>
 
 // Replace the image of a product (upload the new one, delete the old one).
 export const updateProductImageAction = async (prevState: any, formData: FormData) => {
-  await getAuthUser();
+  await getAdminUser();
 
   try {
     const imageFile = formData.get("image") as File;
     const productId = formData.get("id") as string;
-    const oldImageUrl = formData.get("url") as string;
 
     const validImage = validateFuctionSchema(imageSchema, { image: imageFile });
 
+    // Never trust the old image URL from the client: read it from the DB.
+    const existing = await db.product.findUnique({ where: { id: productId }, select: { image: true } });
+    if (!existing) throw new Error("Product not found");
+
     const newImagePath = await uploadImage(validImage.image);
-    await deleteImage(oldImageUrl);
+    await deleteImage(existing.image);
 
     await db.product.update({
       where: { id: productId },

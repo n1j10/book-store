@@ -119,12 +119,14 @@ export const updateCategoryImageAction = async (prevState: any, formData: FormDa
   try {
     const imageFile = formData.get("image") as File;
     const categoryId = formData.get("id") as string;
-    const oldImageUrl = formData.get("url") as string;
+
 
     const validImage = validateFuctionSchema(imageSchema, { image: imageFile });
 
     const newImagePath = await uploadImage(validImage.image);
-    await deleteImage(oldImageUrl);
+    // Read the old image from the DB instead of trusting the form.
+    const existing = await db.category.findUnique({ where: { id: categoryId }, select: { image: true } });
+    if (existing?.image) await deleteImage(existing.image);
 
     await db.category.update({
       where: { id: categoryId },

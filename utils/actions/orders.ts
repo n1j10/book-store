@@ -20,12 +20,11 @@ const getCustomerInfo = (user: User) => {
 
 // Ask QiCard for a payment link.
 // If QiCard fails we only log the error and return null (the user will pay later from /orders).
-const getPaymentUrl = async (user: User, orderId: string, cartId?: string) => {
+const getPaymentUrl = async (user: User, orderId: string) => {
   try {
     const checkout = await startQiCardCheckout({
       clerkId: user.id,
       orderId,
-      cartId,
       customerInfo: getCustomerInfo(user),
     });
     return checkout.paymentUrl;
@@ -53,27 +52,23 @@ const buyOneProduct = async (user: User, productId: string) => {
   return getPaymentUrl(user, order.id);
 };
 
-// Buy everything in the cart: create one order per cart item and get the payment link.
+// Buy everything in the cart. Checkout by cartId so the order total is
+// computed server-side from the whole cart (not only the first item).
 const buyCart = async (user: User) => {
   const cart = await fetchOrCreateCart({ userId: user.id, errorOnFailure: true });
   if (!cart.cartItems.length) throw new Error("Cart is empty");
 
-  const orders = await Promise.all(
-    cart.cartItems.map((item) =>
-      db.order.create({
-        data: {
-          clerkId: user.id,
-          productId: item.productId,
-          products: item.amount,
-          orderTotal: item.amount * item.product.price,
-          isPaid: false,
-        },
-      }),
-    ),
-  );
-
-  // The payment is started with the first order
-  return getPaymentUrl(user, orders[0].id, cart.id);
+  try {
+    const checkout = await startQiCardCheckout({
+      clerkId: user.id,
+      cartId: cart.id,
+      customerInfo: getCustomerInfo(user),
+    });
+    return checkout.paymentUrl;
+  } catch (error) {
+    console.error("QiCard checkout initiation error:", error);
+    return null;
+  }
 };
 
 // ================= Actions =================
