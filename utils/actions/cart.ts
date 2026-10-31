@@ -7,6 +7,7 @@ import { Cart } from "@/utils/type";
 import { getAuthUser } from "./user";
 import { renderError } from "./global";
 import { fetchSingleProduct } from "./products";
+import { cartAmountSchema, validateFuctionSchema } from "../schema";
 
 // Load the cart items together with their products.
 const cartInclude = {
@@ -76,7 +77,7 @@ const addProductToCart = async ({
   if (cartItem) {
     await db.cartItem.update({
       where: { id: cartItem.id },
-      data: { amount: cartItem.amount + amount },
+      data: { amount: Math.min(cartItem.amount + amount, 100) },
     });
   } else {
     await db.cartItem.create({
@@ -120,7 +121,7 @@ export const addToCartAction = async (prevState: any, formData: FormData) => {
 
   try {
     const productId = formData.get("productId") as string;
-    const amount = Number(formData.get("amount"));
+    const amount = validateFuctionSchema(cartAmountSchema, formData.get("amount"));
 
     await fetchSingleProduct(productId); // make sure the product exists
     const cart = await fetchOrCreateCart({ userId: user.id });
@@ -177,7 +178,7 @@ export const updateCartItemAction = async ({
 
     await db.cartItem.update({
       where: { id: cartItemId, cartId: cart.id },
-      data: { amount },
+      data: { amount: validateFuctionSchema(cartAmountSchema, amount) },
     });
 
     await updateCart(cart);

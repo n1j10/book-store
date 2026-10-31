@@ -300,10 +300,12 @@ export async function settleQiCardPayment(input: {
   paymentId?: string;
   requestId?: string;
   status: string;
+  /** Amount confirmed by the gateway; must match the stored amount to mark the order paid. */
+  amount?: number;
   details?: JsonRecord;
   failureReason?: string;
 }) {
-  const normalizedStatus = input.status.toUpperCase();
+  let normalizedStatus = input.status.toUpperCase();
 
   return db.$transaction(
     async (tx) => {
@@ -325,6 +327,11 @@ export async function settleQiCardPayment(input: {
         return payment;
       }
 
+      // Guard against amount tampering: a SUCCESS for a different amount is not a valid payment.
+      if (normalizedStatus === SUCCESS && (input.amount === undefined || Number(input.amount) !== payment.amount)) {
+        normalizedStatus = 'AMOUNT_MISMATCH';
+      }
+
       const maskedPan = typeof input.details?.maskedPan === 'string' ? input.details.maskedPan : undefined;
       const paymentSystem = typeof input.details?.paymentSystem === 'string' ? input.details.paymentSystem : undefined;
 
@@ -336,7 +343,7 @@ export async function settleQiCardPayment(input: {
           maskedPan: maskedPan || payment.maskedPan,
           paymentSystem: paymentSystem || payment.paymentSystem,
           details: input.details ? JSON.parse(JSON.stringify(input.details)) : undefined,
-          failureReason: input.failureReason,
+          failureReason: normalizedStatus === 'AMOUNT_MISMATCH' ? 'Gateway amount does not match order amount' : input.failureReason,
         },
       });
 

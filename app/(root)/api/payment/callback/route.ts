@@ -29,12 +29,14 @@ export async function GET(request: NextRequest) {
   try {
     let finalStatus = queryStatus;
     let details: any = undefined;
+    let amount: number | undefined;
 
     // Direct server-to-server verification with QiCard gateway
     if (paymentId) {
       const statusResult = await getQiCardPaymentStatus(paymentId);
       finalStatus = statusResult.status;
       details = statusResult.details;
+      amount = statusResult.amount;
     }
 
     if (paymentId && finalStatus) {
@@ -42,11 +44,12 @@ export async function GET(request: NextRequest) {
         paymentId,
         requestId: requestId || undefined,
         status: finalStatus,
+        amount,
         details,
       });
     }
 
-    const isSuccess = finalStatus?.toUpperCase() === 'SUCCESS';
+    const isSuccess = paymentId ? finalStatus?.toUpperCase() === 'SUCCESS' : false;
     return resultRedirect(request, isSuccess ? 'success' : 'failed', paymentId || undefined, orderId);
   } catch (error) {
     console.error('QiCard callback verification error:', {

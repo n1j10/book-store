@@ -20,7 +20,13 @@ export const creatReviewAction = async (prevState: any, formData: FormData) => {
     }
 
     await db.review.create({
-      data: { ...result.data, clerkId: user.id },
+      data: {
+        ...result.data,
+        // Author identity comes from the session, never from the form.
+        authorName: [user.firstName, user.lastName].filter(Boolean).join(" ") || "Customer",
+        authorImageUrl: user.imageUrl,
+        clerkId: user.id,
+      },
     });
 
     revalidatePath(`/products/${result.data.productId}`);

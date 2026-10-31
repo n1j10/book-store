@@ -32,7 +32,8 @@ export const toggleFavAction = async (prevState: ToggleFavoriteState) => {
     let message = "";
 
     if (FavoriteID) {
-      await db.favorite.delete({ where: { id: FavoriteID } });
+      // Scope the delete to the current user to prevent IDOR.
+      await db.favorite.deleteMany({ where: { id: FavoriteID, clerkId: user.id } });
       message = "removed from favorite";
     } else {
       await db.favorite.create({

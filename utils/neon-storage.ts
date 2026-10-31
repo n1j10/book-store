@@ -19,7 +19,9 @@ const getStorageClient = () => {
 };
 
 export const uploadImage = async (image: File) => {
-  const extension = path.extname(image.name).toLowerCase();
+  // Only keep a safe extension from the client-supplied name.
+  const ext = path.extname(image.name).toLowerCase();
+  const extension = /^.[a-z0-9]{1,5}$/.test(ext) ? ext : "";
   const key = `${Date.now()}-${randomUUID()}${extension}`;
   const client = getStorageClient();
 
